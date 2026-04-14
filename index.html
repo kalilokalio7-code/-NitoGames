@@ -384,8 +384,8 @@
         <div class="snake-game-container">
             <div class="controls-wrapper">
                 <button class="ctrl-btn btn-up" onclick="changeDir('UP')">▲</button>
-                <button class="ctrl-btn btn-left" onclick="changeDir('LEFT')">◀</button>
-                <button class="ctrl-btn btn-right" onclick="changeDir('RIGHT')">▶</button>
+                <button class="ctrl-btn btn-left" onclick="changeDir('LEFT')">▶</button>
+                <button class="ctrl-btn btn-right" onclick="changeDir('RIGHT')">◀</button>
                 <button class="ctrl-btn btn-down" onclick="changeDir('DOWN')">▼</button>
             </div>
             <canvas id="snakeCanvas" width="360" height="360"></canvas>
@@ -468,8 +468,8 @@
         function changeDir(dir) {
             if (dir === 'UP' && dy === 0) { dx = 0; dy = -20; }
             if (dir === 'DOWN' && dy === 0) { dx = 0; dy = 20; }
-            if (dir === 'LEFT' && dx === 0) { dx = -20; dy = 0; }
-            if (dir === 'RIGHT' && dx === 0) { dx = 20; dy = 0; }
+            if (dir === 'LEFT' && dx === 0) { dx = 20; dy = 0; }
+            if (dir === 'RIGHT' && dx === 0) { dx = -20; dy = 0; }
         }
         function drawSn() { if (!snActive) return; const ctx = document.getElementById('snakeCanvas').getContext('2d'); ctx.fillStyle = "black"; ctx.fillRect(0, 0, 360, 360); let h = { x: sn[0].x + dx, y: sn[0].y + dy }; if (h.x < 0 || h.x >= 360 || h.y < 0 || h.y >= 360 || sn.some(s => s.x === h.x && s.y === h.y)) { snActive = false; clearInterval(snInt); document.getElementById('snake-msg').innerText = "خسرتي! 💀"; document.getElementById('retry-sn').style.display = "block"; return; } sn.unshift(h); if (h.x === fd.x && h.y === fd.y) { score++; document.getElementById('snake-score').innerText = "النقاط: " + score; genFd(); } else sn.pop(); ctx.fillStyle = "red"; ctx.fillRect(fd.x, fd.y, 18, 18); ctx.fillStyle = "lime"; sn.forEach(s => ctx.fillRect(s.x, s.y, 18, 18)); }
         function showChess() { document.getElementById('main-menu').style.display = 'none'; document.getElementById('chess-ui').style.display = 'flex'; }
