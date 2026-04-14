@@ -25,8 +25,88 @@
             overflow-x: hidden;
         }
 
+        /* --- نظام تسجيل الدخول (إضافات ضرورية) --- */
+        #auth-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .auth-box {
+            background: var(--card);
+            padding: 30px;
+            border-radius: 20px;
+            width: 300px;
+            border: 2px solid var(--red);
+        }
+
+        .auth-box input,
+        .auth-box select {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: none;
+            outline: none;
+            box-sizing: border-box;
+            background: #1a1a2e;
+            color: white;
+        }
+
+        .auth-nav-btns {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .auth-nav-btns button {
+            flex: 1;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 8px;
+            border: none;
+            font-weight: bold;
+            background: #1a1a2e;
+            color: white;
+        }
+
+        .auth-nav-btns button.active {
+            background: var(--red);
+        }
+
+        .auth-form {
+            display: none;
+        }
+
+        .auth-form.active {
+            display: block;
+        }
+
+        .logout-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 8px 15px;
+            background: var(--red);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* --- الستايل الأصلي ديالك (متبدل والو) --- */
         .container {
             padding: 50px 20px;
+            display: none;
         }
 
         .logo {
@@ -221,7 +301,35 @@
 
 <body>
 
+    <div id="auth-screen">
+        <h1 class="logo">nito<span>games</span></h1>
+        <div class="auth-box">
+            <div class="auth-nav-btns">
+                <button id="btn-show-login" class="active" onclick="toggleAuth('login')">تسجيل دخول</button>
+                <button id="btn-show-signup" onclick="toggleAuth('signup')">حساب جديد</button>
+            </div>
+
+            <div id="login-form" class="auth-form active">
+                <input type="text" id="l-user" placeholder="اسم المستخدم">
+                <input type="password" id="l-pass" placeholder="كلمة المرور">
+                <button class="play-btn" onclick="doLogin()">دخول</button>
+            </div>
+
+            <div id="signup-form" class="auth-form">
+                <input type="text" id="s-user" placeholder="اسم مستخدم جديد">
+                <input type="password" id="s-pass" placeholder="كلمة مرور">
+                <select id="s-gender">
+                    <option value="male">ولد</option>
+                    <option value="female">بنت</option>
+                </select>
+                <button class="play-btn" style="background:#28a745" onclick="doSignup()">إنشاء حساب</button>
+            </div>
+            <p id="auth-msg" style="color:#ff9999; font-size:0.8rem; margin-top:10px"></p>
+        </div>
+    </div>
+
     <div id="main-menu" class="container">
+        <button class="logout-btn" onclick="doLogout()">تسجيل الخروج</button>
         <h1 class="logo">nito<span>games</span></h1>
         <div class="games-grid">
             <div class="game-card" onclick="showXO()">
@@ -276,8 +384,8 @@
         <div class="snake-game-container">
             <div class="controls-wrapper">
                 <button class="ctrl-btn btn-up" onclick="changeDir('UP')">▲</button>
-                <button class="ctrl-btn btn-left" onclick="changeDir('LEFT')">▶</button>
-                <button class="ctrl-btn btn-right" onclick="changeDir('RIGHT')">◀</button>
+                <button class="ctrl-btn btn-left" onclick="changeDir('LEFT')">◀</button>
+                <button class="ctrl-btn btn-right" onclick="changeDir('RIGHT')">▶</button>
                 <button class="ctrl-btn btn-down" onclick="changeDir('DOWN')">▼</button>
             </div>
             <canvas id="snakeCanvas" width="360" height="360"></canvas>
@@ -296,124 +404,75 @@
     </div>
 
     <script>
-        // دالة لإخفاء كل شيء والرجوع للقائمة
+        // --- منطق الدخول والخروج ---
+        function toggleAuth(type) {
+            document.getElementById('login-form').classList.toggle('active', type === 'login');
+            document.getElementById('signup-form').classList.toggle('active', type === 'signup');
+            document.getElementById('btn-show-login').classList.toggle('active', type === 'login');
+            document.getElementById('btn-show-signup').classList.toggle('active', type === 'signup');
+            document.getElementById('auth-msg').innerText = "";
+        }
+
+        function doSignup() {
+            let u = document.getElementById('s-user').value.trim();
+            let p = document.getElementById('s-pass').value.trim();
+            if (!u || !p) { document.getElementById('auth-msg').innerText = "دخل المعلومات!"; return; }
+            let users = JSON.parse(localStorage.getItem('nUsers') || '{}');
+            if (users[u]) { document.getElementById('auth-msg').innerText = "الاسم مستعمل!"; return; }
+            users[u] = { p: p };
+            localStorage.setItem('nUsers', JSON.stringify(users));
+            startGame();
+        }
+
+        function doLogin() {
+            let u = document.getElementById('l-user').value.trim();
+            let p = document.getElementById('l-pass').value.trim();
+            let users = JSON.parse(localStorage.getItem('nUsers') || '{}');
+            if (users[u] && users[u].p === p) startGame();
+            else document.getElementById('auth-msg').innerText = "خطأ في الاسم أو كلمة المرور";
+        }
+
+        function startGame() {
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('main-menu').style.display = 'block';
+        }
+
+        function doLogout() {
+            document.getElementById('auth-screen').style.display = 'flex';
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('l-user').value = "";
+            document.getElementById('l-pass').value = "";
+        }
+
+        // --- كود الألعاب ديالك (بدون تغيير) ---
         function hideAll() {
             document.querySelectorAll('.full-screen').forEach(el => el.style.display = 'none');
             document.getElementById('main-menu').style.display = 'block';
             if (snInt) clearInterval(snInt);
         }
 
-        // --- XO Logic ---
-        let xoB = Array(9).fill("");
-        let active = false;
-        let diff = "";
-        let playerStartsNext = true;
-
-        function showXO() {
-            document.getElementById('main-menu').style.display = 'none';
-            document.getElementById('xo-ui').style.display = 'flex';
-            document.getElementById('xo-menu').style.display = 'block';
-            document.getElementById('xo-play').style.display = 'none';
-        }
-
-        function startXO(d) {
-            diff = d;
-            document.getElementById('xo-menu').style.display = 'none';
-            document.getElementById('xo-play').style.display = 'block';
-            resetXO();
-        }
-
-        function xoMove(i) {
-            if (xoB[i] === "" && active) {
-                xoB[i] = "X"; document.querySelectorAll('.cell')[i].innerText = "X";
-                if (check(xoB, "X")) { finishXO("مبروك فزتي! 🎉", "#28a745"); }
-                else if (!xoB.includes("")) { finishXO("تعادل! 🤝", "#ffffff"); }
-                else { active = false; document.getElementById('xo-msg').innerText = "تفكير..."; setTimeout(ai, 500); }
-            }
-        }
-
-        function ai() {
-            let m;
-            if (diff === 'easy') { let a = xoB.map((s, i) => s === "" ? i : null).filter(h => h !== null); m = a[Math.floor(Math.random() * a.length)]; }
-            else m = minimaxMove(xoB);
-
-            xoB[m] = "O"; document.querySelectorAll('.cell')[m].innerText = "O";
-            if (check(xoB, "O")) finishXO("خسرتي! 💀", "var(--red)");
-            else if (!xoB.includes("")) finishXO("تعادل! 🤝", "#ffffff");
-            else { active = true; document.getElementById('xo-msg').innerText = "دورك (X)"; }
-        }
-
-        function finishXO(txt, color) {
-            active = false;
-            const m = document.getElementById('xo-msg');
-            m.innerText = txt; m.style.color = color;
-            document.getElementById('xo-retry').style.display = "block";
-            playerStartsNext = !playerStartsNext;
-        }
-
-        function resetXO() {
-            xoB.fill("");
-            document.querySelectorAll('.cell').forEach(c => c.innerText = "");
-            document.getElementById('xo-retry').style.display = "none";
-            const m = document.getElementById('xo-msg');
-            if (playerStartsNext) {
-                active = true; m.innerText = "دورك تبدأي (X)"; m.style.color = "white";
-            } else {
-                active = false; m.innerText = "الذكاء يبدأ..."; m.style.color = "white";
-                setTimeout(ai, 800);
-            }
-        }
-
+        let xoB = Array(9).fill(""); let active = false; let diff = ""; let pStarts = true;
+        function showXO() { document.getElementById('main-menu').style.display = 'none'; document.getElementById('xo-ui').style.display = 'flex'; document.getElementById('xo-menu').style.display = 'block'; document.getElementById('xo-play').style.display = 'none'; }
+        function startXO(d) { diff = d; document.getElementById('xo-menu').style.display = 'none'; document.getElementById('xo-play').style.display = 'block'; resetXO(); }
+        function xoMove(i) { if (xoB[i] === "" && active) { xoB[i] = "X"; document.querySelectorAll('.cell')[i].innerText = "X"; if (check(xoB, "X")) finishXO("مبروك فزتي! 🎉", "#28a745"); else if (!xoB.includes("")) finishXO("تعادل! 🤝", "white"); else { active = false; document.getElementById('xo-msg').innerText = "تفكير..."; setTimeout(ai, 500); } } }
+        function ai() { let m; if (diff === 'easy') { let a = xoB.map((s, i) => s === "" ? i : null).filter(h => h !== null); m = a[Math.floor(Math.random() * a.length)]; } else m = minimaxMove(xoB); xoB[m] = "O"; document.querySelectorAll('.cell')[m].innerText = "O"; if (check(xoB, "O")) finishXO("خسرتي! 💀", "var(--red)"); else if (!xoB.includes("")) finishXO("تعادل! 🤝", "white"); else { active = true; document.getElementById('xo-msg').innerText = "دورك (X)"; } }
+        function finishXO(t, c) { active = false; const m = document.getElementById('xo-msg'); m.innerText = t; m.style.color = c; document.getElementById('xo-retry').style.display = "block"; pStarts = !pStarts; }
+        function resetXO() { xoB.fill(""); document.querySelectorAll('.cell').forEach(c => c.innerText = ""); document.getElementById('xo-retry').style.display = "none"; if (pStarts) { active = true; document.getElementById('xo-msg').innerText = "دورك تبدأي (X)"; } else { active = false; document.getElementById('xo-msg').innerText = "الذكاء يبدأ..."; setTimeout(ai, 800); } }
         function check(b, s) { const w = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]]; return w.some(z => z.every(i => b[i] === s)); }
-        function minimaxMove(b) {
-            let best = -Infinity; let move;
-            for (let i = 0; i < 9; i++) { if (b[i] === "") { b[i] = "O"; let s = minimax(b, 0, false); b[i] = ""; if (s > best) { best = s; move = i; } } }
-            return move;
-        }
-        function minimax(b, d, isM) {
-            if (check(b, "O")) return 10; if (check(b, "X")) return -10; if (!b.includes("")) return 0;
-            if (isM) { let s = -Infinity; for (let i = 0; i < 9; i++) if (b[i] === "") { b[i] = "O"; s = Math.max(s, minimax(b, d + 1, false)); b[i] = ""; } return s; }
-            else { let s = Infinity; for (let i = 0; i < 9; i++) if (b[i] === "") { b[i] = "X"; s = Math.min(s, minimax(b, d + 1, true)); b[i] = ""; } return s; }
-        }
+        function minimaxMove(b) { let best = -Infinity; let move; for (let i = 0; i < 9; i++) { if (b[i] === "") { b[i] = "O"; let s = minimax(b, 0, false); b[i] = ""; if (s > best) { best = s; move = i; } } } return move; }
+        function minimax(b, d, isM) { if (check(b, "O")) return 10; if (check(b, "X")) return -10; if (!b.includes("")) return 0; if (isM) { let s = -Infinity; for (let i = 0; i < 9; i++) if (b[i] === "") { b[i] = "O"; s = Math.max(s, minimax(b, d + 1, false)); b[i] = ""; } return s; } else { let s = Infinity; for (let i = 0; i < 9; i++) if (b[i] === "") { b[i] = "X"; s = Math.min(s, minimax(b, d + 1, true)); b[i] = ""; } return s; } }
 
-        // --- Snake Logic ---
         let sn, fd, dx, dy, score, snInt, snActive = false;
-        function showSnake() {
-            document.getElementById('main-menu').style.display = 'none';
-            document.getElementById('snake-ui').style.display = 'flex';
-            document.getElementById('snake-msg').innerText = "";
-            document.getElementById('retry-sn').style.display = "none";
-            sn = [{ x: 180, y: 180 }]; dx = 20; dy = 0; score = 0; snActive = true;
-            genFd(); if (snInt) clearInterval(snInt); snInt = setInterval(drawSn, 120);
-        }
+        function showSnake() { document.getElementById('main-menu').style.display = 'none'; document.getElementById('snake-ui').style.display = 'flex'; document.getElementById('snake-msg').innerText = ""; document.getElementById('retry-sn').style.display = "none"; sn = [{ x: 180, y: 180 }]; dx = 20; dy = 0; score = 0; snActive = true; genFd(); if (snInt) clearInterval(snInt); snInt = setInterval(drawSn, 120); }
         function genFd() { fd = { x: Math.floor(Math.random() * 17) * 20, y: Math.floor(Math.random() * 17) * 20 }; }
         function changeDir(dir) {
             if (dir === 'UP' && dy === 0) { dx = 0; dy = -20; }
             if (dir === 'DOWN' && dy === 0) { dx = 0; dy = 20; }
-            if (dir === 'LEFT' && dx === 0) { dx = 20; dy = 0; }
-            if (dir === 'RIGHT' && dx === 0) { dx = -20; dy = 0; }
+            if (dir === 'LEFT' && dx === 0) { dx = -20; dy = 0; }
+            if (dir === 'RIGHT' && dx === 0) { dx = 20; dy = 0; }
         }
-        function drawSn() {
-            if (!snActive) return;
-            const ctx = document.getElementById('snakeCanvas').getContext('2d');
-            ctx.fillStyle = "black"; ctx.fillRect(0, 0, 360, 360);
-            let h = { x: sn[0].x + dx, y: sn[0].y + dy };
-            if (h.x < 0 || h.x >= 360 || h.y < 0 || h.y >= 360 || sn.some(s => s.x === h.x && s.y === h.y)) {
-                snActive = false; clearInterval(snInt);
-                document.getElementById('snake-msg').innerText = "خسرتي! 💀";
-                document.getElementById('retry-sn').style.display = "block";
-                return;
-            }
-            sn.unshift(h);
-            if (h.x === fd.x && h.y === fd.y) { score++; document.getElementById('snake-score').innerText = "النقاط: " + score; genFd(); }
-            else sn.pop();
-            ctx.fillStyle = "red"; ctx.fillRect(fd.x, fd.y, 18, 18);
-            ctx.fillStyle = "lime"; sn.forEach(s => ctx.fillRect(s.x, s.y, 18, 18));
-        }
-        function showChess() {
-            document.getElementById('main-menu').style.display = 'none';
-            document.getElementById('chess-ui').style.display = 'flex';
-        }
+        function drawSn() { if (!snActive) return; const ctx = document.getElementById('snakeCanvas').getContext('2d'); ctx.fillStyle = "black"; ctx.fillRect(0, 0, 360, 360); let h = { x: sn[0].x + dx, y: sn[0].y + dy }; if (h.x < 0 || h.x >= 360 || h.y < 0 || h.y >= 360 || sn.some(s => s.x === h.x && s.y === h.y)) { snActive = false; clearInterval(snInt); document.getElementById('snake-msg').innerText = "خسرتي! 💀"; document.getElementById('retry-sn').style.display = "block"; return; } sn.unshift(h); if (h.x === fd.x && h.y === fd.y) { score++; document.getElementById('snake-score').innerText = "النقاط: " + score; genFd(); } else sn.pop(); ctx.fillStyle = "red"; ctx.fillRect(fd.x, fd.y, 18, 18); ctx.fillStyle = "lime"; sn.forEach(s => ctx.fillRect(s.x, s.y, 18, 18)); }
+        function showChess() { document.getElementById('main-menu').style.display = 'none'; document.getElementById('chess-ui').style.display = 'flex'; }
     </script>
 </body>
 
